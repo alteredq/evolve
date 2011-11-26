@@ -32,7 +32,7 @@ THE SOFTWARE.
 <head>
 <title>Image evolution</title>
 
-<style type="text/css">
+<style>
 aaa { outline:dotted 1px red }
 body { font-family:arial, sans-serif; padding:1em }
 h2 { margin-top:1.75em }
@@ -88,8 +88,8 @@ dd { margin:0 0 2em 0 }
 .speed { font-size:0.9em; color:#60BF5F }
 </style>
 
-<script type="text/javascript">
-var IMG_INIT ="mona_lisa_crop.jpg"; // mona_lisa_crop.jpg mondrian.jpg
+<script>
+var IMG_INIT ="img/mona_lisa_crop.jpg"; // mona_lisa_crop.jpg mondrian.jpg
 var DEPTH = 4;
 
 var INIT_TYPE = "color"; // random color
@@ -202,19 +202,19 @@ function clamp(val, minval, maxval) {
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function stop() {
     clearTimeout(EV_ID);
-    
+
     ELAPSED_TIME += get_timestamp() - LAST_START;
-    
+
     hide("stop");
     show("start");
 }
 
 function start() {
     EV_ID = setInterval(evolve, EV_TIMEOUT);
-    
+
     LAST_START = get_timestamp();
     LAST_COUNTER = COUNTER_TOTAL;
-    
+
     hide("start");
     show("stop");
 }
@@ -233,7 +233,7 @@ function addPolygon() {
         pass_gene_mutation(DNA_BEST, DNA_TEST, DNA_BEST.length-1);
     }
     setElement("polygons", ACTUAL_SHAPES);
-    
+
     redrawDNA();
     refreshStats();
 }
@@ -241,9 +241,9 @@ function addPolygon() {
 function removePolygon() {
     ACTUAL_SHAPES = clamp(ACTUAL_SHAPES-1, 1, 1000);
     setElement("polygons", ACTUAL_SHAPES);
-    
+
     redrawDNA();
-    refreshStats();    
+    refreshStats();
 }
 
 function addVertex() {
@@ -255,7 +255,7 @@ function addVertex() {
         copyDNA(DNA_BEST, DNA_TEST);
     }
     setElement("vertices", ACTUAL_POINTS);
-    
+
     redrawDNA();
     refreshStats();
 }
@@ -304,10 +304,10 @@ function resetDna() {
     init_dna(DNA_TEST);
     init_dna(DNA_BEST);
     copyDNA(DNA_BEST, DNA_TEST);
-    
+
     FITNESS_TEST = FITNESS_MAX;
     FITNESS_BEST = FITNESS_MAX;
-    
+
     COUNTER_BENEFIT = 0;
     COUNTER_TOTAL = 0;
 
@@ -320,7 +320,7 @@ function refreshStats() {
     FITNESS_BEST = FITNESS_TEST;
     FITNESS_BEST_NORMALIZED = 100*(1-FITNESS_BEST/NORM_COEF);
     EL_FITNESS.innerHTML = FITNESS_BEST_NORMALIZED.toFixed(2)+"%";
-    
+
     EL_STEP_BENEFIT.innerHTML = COUNTER_BENEFIT;
     EL_STEP_TOTAL.innerHTML = COUNTER_TOTAL;
 }
@@ -387,7 +387,7 @@ function bell_precompute(range, spread, resolution) {
 	var dist = new Array();
 	var off = new Array();
 	var index = 0;
-	
+
 	for (var x = -range-1; x <= range+1; x++) {
 		off[x] = index;
 		accumulator = step + Math.exp(-x*x/2/spread/spread);
@@ -416,7 +416,7 @@ function draw_dist(ctx, dist) {
 	ctx.fillStyle = "rgb(255,255,255)";
 	ctx.fillRect(0, 0, IWIDTH, IHEIGHT);
 	ctx.fillStyle = "rgb(0,0,255)";
-	
+
 	var max = 0;
 	for (var i in dist) { if (dist[i] > max) max = dist[i]; }
 	for (var i in dist) {
@@ -434,9 +434,9 @@ function draw_dist(ctx, dist) {
 
 function mutate_gauss(dna_out) {
     CHANGED_SHAPE_INDEX = rand_int(ACTUAL_SHAPES-1);
-    
+
     var roulette = rand_float(2.0);
-    
+
     // mutate color
     if(roulette<1) {
         // red
@@ -456,16 +456,16 @@ function mutate_gauss(dna_out) {
             dna_out[CHANGED_SHAPE_INDEX].color.a = 0.00390625 * rand_bell(255, Math.floor(dna_out[CHANGED_SHAPE_INDEX].color.a*255));
         }
     }
-    
+
     // mutate shape
     else {
         var CHANGED_POINT_INDEX = rand_int(ACTUAL_POINTS-1);
-        
+
         // x-coordinate
         if(roulette<1.5) {
             dna_out[CHANGED_SHAPE_INDEX].shape[CHANGED_POINT_INDEX].x = rand_bell(IWIDTH, dna_out[CHANGED_SHAPE_INDEX].shape[CHANGED_POINT_INDEX].x);
         }
-        
+
         // y-coordinate
         else {
             dna_out[CHANGED_SHAPE_INDEX].shape[CHANGED_POINT_INDEX].y = rand_bell(IHEIGHT, dna_out[CHANGED_SHAPE_INDEX].shape[CHANGED_POINT_INDEX].y);
@@ -625,7 +625,7 @@ function evolve() {
 
     COUNTER_TOTAL++;
     EL_STEP_TOTAL.innerHTML = COUNTER_TOTAL;
-    
+
     if(COUNTER_TOTAL%10==0) {
         var passed = get_timestamp() - LAST_START;
         EL_ELAPSED_TIME.innerHTML = render_nice_time(ELAPSED_TIME+passed);
@@ -693,7 +693,7 @@ function init_canvas() {
 
     SUBPIXELS = IWIDTH*IHEIGHT*DEPTH;
     NORM_COEF = IWIDTH*IHEIGHT*3*255;
-    
+
     CANVAS_INPUT.setAttribute('width',IWIDTH);
     CANVAS_INPUT.setAttribute('height',IHEIGHT);
 
@@ -749,7 +749,7 @@ function serializeDNAasSVG(dna) {
 
     // header
 	dna_string += "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
-	dna_string += "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n";  
+	dna_string += "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n";
 	dna_string += "<svg xmlns=\"http://www.w3.org/2000/svg\"\n";
     dna_string += "xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:ev=\"http://www.w3.org/2001/xml-events\"\n";
     dna_string += "version=\"1.1\" baseProfile=\"full\"\n";
@@ -777,7 +777,7 @@ function deserializeDNA(dna, text) {
 
     MAX_POINTS = parseInt(data[0]);
     MAX_SHAPES = parseInt(data[1]);
-        
+
     ACTUAL_SHAPES = MAX_SHAPES;
     ACTUAL_POINTS = MAX_POINTS;
 
@@ -821,11 +821,11 @@ function import_dna() {
         deserializeDNA(DNA_BEST, el.value);
 
         init_dna(DNA_TEST);
-        copyDNA(DNA_BEST, DNA_TEST);        
+        copyDNA(DNA_BEST, DNA_TEST);
 
         redrawDNA();
         refreshStats();
-        
+
         setElement("polygons", ACTUAL_SHAPES);
         setElement("vertices", ACTUAL_POINTS);
     }
@@ -887,7 +887,7 @@ function init() {
         }
     }
     IMAGE.src = IMG_INIT;
-    
+
     setButtonHighlight("b_dna_black", ["b_dna_random", "b_dna_white", "b_dna_black"]);
     setButtonHighlight("b_mut_med", ["b_mut_gauss", "b_mut_soft", "b_mut_med", "b_mut_hard"]);
 }
@@ -916,21 +916,21 @@ function init() {
 
         <div id="start" onclick="start()">Start</div>
         <div id="stop" onclick="stop()">Stop</div>
-        
+
         <div id="stats">
             <span id="time">0</span> Elapsed time<br/>
             <span id="mutsec">?</span> Mutations per second<br/>
         </div>
     </div>
-        
+
     <br class="clr"/>
-    
+
     <div id="imgform">
         <form>
             <div class="button" id="b_setimage" onclick="set_image()">Set new image URL</div>
             <input id="imgurl"></input>
         </form>
-        <small style="color:#555;">Image should be small (~200x200 pixels), otherwise fitness computation is very slow. 
+        <small style="color:#555;">Image should be small (~200x200 pixels), otherwise fitness computation is very slow.
         <p>Examples:
         <a onclick="set_example_image(this); return false;" href="http://alteredqualia.com/visualization/evolve/mona_lisa_crop.jpg">Mona Lisa</a>
         <a onclick="set_example_image(this); return false;" href="http://alteredqualia.com/visualization/evolve/darwin_crop.jpg">Darwin</a>
@@ -938,9 +938,9 @@ function init() {
         <a onclick="set_example_image(this); return false;" href="http://alteredqualia.com/visualization/evolve/koza_crop.jpg">John Koza</a>
         </small>
     </div>
-    
+
     <br class="clr"/>
-    
+
     <div id="dnaformwrap">
         <form name="dnaform">
             <div class="button" id="b_export_dna" onclick="export_dna()">Export DNA</div>
@@ -951,8 +951,8 @@ function init() {
             <textarea name="clipboard" id="clipboard" onClick="select_all();"></textarea>
         </form>
     </div>
-    
-    
+
+
     <div id="parameters">
         <div id="mutationtype">
             <div class="parname">Mutation</div>
@@ -961,17 +961,17 @@ function init() {
             <div class="button" id="b_mut_med" onclick="setMutation('medium')">Medium</div>
             <div class="button" id="b_mut_hard" onclick="setMutation('hard')">Hard</div>
         </div>
-        
+
         <div id="resetdna">
             <div class="parname">Initialize DNA</div>
             <div class="button" id="b_dna_random" onclick="setDnaRandom()">Color</div>
             <div class="button" id="b_dna_white" onclick="setDnaColor(254,254,254)">White</div>
             <div class="button" id="b_dna_black" onclick="setDnaColor(0,0,0)">Black</div>
         </div>
-        
+
         <div id="geometry">
             <div class="button" onclick="removePolygon()">-</div> <div class="button" onclick="addPolygon()">+</div> <span class="parname pargeo"><span id="polygons">50</span> Polygons</span> <br/>
-            <div class="button" onclick="removeVertex()">-</div> <div class="button" onclick="addVertex()">+</div> <span class="parname pargeo"><span id="vertices">6</span> Vertices</span> 
+            <div class="button" onclick="removeVertex()">-</div> <div class="button" onclick="addVertex()">+</div> <span class="parname pargeo"><span id="vertices">6</span> Vertices</span>
         </div>
     </div>
 
@@ -1004,7 +1004,7 @@ function init() {
 
     <h2>How does it look after some time?</h2>
     <div class="snapshot">
-        <img src="4points15min.jpg"/>
+        <img src="img/4points15min.jpg"/>
         <ul>
             <li>50 polygons (4-vertex)</li>
             <li>~15 minutes</li>
@@ -1014,7 +1014,7 @@ function init() {
         </ul>
     </div>
     <div class="snapshot">
-        <img src="6points15min.jpg"/>
+        <img src="img/6points15min.jpg"/>
         <ul>
             <li>50 polygons (6-vertex)</li>
             <li>~15 minutes</li>
@@ -1024,7 +1024,7 @@ function init() {
         </ul>
     </div>
     <div class="snapshot">
-        <img src="10points15min.jpg"/>
+        <img src="img/10points15min.jpg"/>
         <ul>
             <li>50 polygons (10-vertex)</li>
             <li>~15 minutes</li>
@@ -1038,7 +1038,7 @@ function init() {
     <br class="clr"/>
 
     <div class="snapshot">
-        <img src="6points45min.jpg"/>
+        <img src="img/6points45min.jpg"/>
         <ul>
             <li>50 polygons (6-vertex)</li>
             <li>~45 minutes</li>
@@ -1049,7 +1049,7 @@ function init() {
     </div>
 
     <div class="snapshot">
-        <img src="6points60min.jpg"/>
+        <img src="img/6points60min.jpg"/>
         <ul>
             <li>50 polygons (6-vertex)</li>
             <li>~60 minutes</li>
@@ -1060,7 +1060,7 @@ function init() {
     </div>
 
     <div class="snapshot">
-        <img src="6points120min.jpg"/>
+        <img src="img/6points120min.jpg"/>
         <ul>
             <li>50 polygons (6-vertex)</li>
             <li>~120 minutes</li>
@@ -1072,9 +1072,9 @@ function init() {
 
     <br class="clr"/>
     <br class="clr"/>
-    
+
     <div class="snapshot">
-        <img src="mona_9559.png"/>
+        <img src="img/mona_9559.png"/>
         <ul style="margin-top:-0.5em">
             <li>50 polygons (6-vertex)</li>
             <li>~4 hours</li>
@@ -1086,7 +1086,7 @@ function init() {
     </div>
 
     <div class="snapshot">
-        <img src="mona_9636.png"/>
+        <img src="img/mona_9636.png"/>
         <ul style="margin-top:-0.5em">
             <li>50 polygons (6-vertex)</li>
             <li>~2 days</li>
@@ -1106,10 +1106,10 @@ function init() {
     <br/>
 
     <div class="snapshot">
-        <img src="darwin_tiny.jpg" style="margin-right:0.25em"/>
-        <img src="6points15min-darwin.jpg"/>
-        <img src="6points60min-darwin.jpg"/>
-        <img src="darwin_9597.png"/>
+        <img src="img/darwin_tiny.jpg" style="margin-right:0.25em"/>
+        <img src="img/6points15min-darwin.jpg"/>
+        <img src="img/6points60min-darwin.jpg"/>
+        <img src="img/darwin_9597.png"/>
         <ul style="margin-top:-0.5em">
             <li>50 polygons (6-vertex)</li>
             <li>4,358 benefitial mutations</li>
@@ -1123,10 +1123,10 @@ function init() {
     <br class="clr"/>
 
     <div class="snapshot">
-        <img src="velociraptor_tiny.jpg" style="margin-right:0.25em"/>
-        <img src="6points15min-velociraptor.jpg"/>
-        <img src="6points60min-velociraptor.jpg"/>
-        <img src="velociraptor_9524.jpg"/>
+        <img src="img/velociraptor_tiny.jpg" style="margin-right:0.25em"/>
+        <img src="img/6points15min-velociraptor.jpg"/>
+        <img src="img/6points60min-velociraptor.jpg"/>
+        <img src="img/velociraptor_9524.jpg"/>
         <ul>
             <li>50 polygons (6-vertex)</li>
             <li>718+ benefitial mutations</li>
@@ -1137,9 +1137,9 @@ function init() {
     </div>
 
     <br class="clr"/>
-    
+
     <div class="snapshot">
-        <img src="velociraptor_9612_100p.jpg" style="margin-left:200px"/>
+        <img src="img/velociraptor_9612_100p.jpg" style="margin-left:200px"/>
         <ul>
             <li>100 polygons (6-vertex)</li>
             <li>9,686 benefitial mutations</li>
@@ -1152,10 +1152,10 @@ function init() {
     <br class="clr"/>
 
     <div class="snapshot">
-        <img src="firefox_tiny.jpg" style="margin-right:0.25em"/>
-        <img src="firefox_9476.png"/>
-        <img src="firefox_9568.png"/>
-        <img src="firefox_9503.png"/>
+        <img src="img/firefox_tiny.jpg" style="margin-right:0.25em"/>
+        <img src="img/firefox_9476.png"/>
+        <img src="img/firefox_9568.png"/>
+        <img src="img/firefox_9503.png"/>
         <ul>
             <li>100 polygons (5-vertex)</li>
             <li>10,490 benefitial mutations</li>
@@ -1169,9 +1169,9 @@ function init() {
     <br class="clr"/>
 
     <div class="snapshot">
-        <img src="mondrian_tiny.jpg" style="margin-right:0.25em"/>
-        <img src="mondrian_2991784x.jpg"/>
-        <img src="mondrian_75485924.jpg"/>
+        <img src="img/mondrian_tiny.jpg" style="margin-right:0.25em"/>
+        <img src="img/mondrian_2991784x.jpg"/>
+        <img src="img/mondrian_75485924.jpg"/>
         <ul>
             <li>50 polygons (6-vertex)</li>
             <li>6,280 benefitial mutations</li>
@@ -1184,7 +1184,7 @@ function init() {
     <br class="clr"/>
 
     <div class="snapshot">
-        <img src="opera_9568.png"/>
+        <img src="img/opera_9568.png"/>
         <ul style="margin-top:0.0em">
             <li>100 polygons (5-vertex)</li>
             <li>6,974 benefitial mutations</li>
@@ -1195,9 +1195,9 @@ function init() {
     </div>
 
     <br class="clr"/>
-    
+
     <div class="snapshot">
-        <img src="apple.png"/>
+        <img src="img/apple.png"/>
         <ul style="margin-top:0.0em">
             <li>100 polygons (6-vertex)</li>
             <li>6,557 benefitial mutations</li>
@@ -1210,8 +1210,8 @@ function init() {
     <br class="clr"/>
 
     <div class="snapshot">
-        <img src="cube.jpg" style="margin-right:0.25em"/>
-        <img src="cube_504973.jpg"/>
+        <img src="img/cube.jpg" style="margin-right:0.25em"/>
+        <img src="img/cube_504973.jpg"/>
         <ul style="margin-top:0.5em">
             <li>50 polygons (6-vertex)</li>
             <li>4,296 benefitial mutations</li>
@@ -1225,8 +1225,8 @@ function init() {
 
 
     <div class="snapshot">
-        <img src="krhainos.gif" style="margin-right:0.25em"/>
-        <img src="krhainos_9384.jpg"/>
+        <img src="img/krhainos.gif" style="margin-right:0.25em"/>
+        <img src="img/krhainos_9384.jpg"/>
         <ul>
             <li>50 polygons (6-vertex)</li>
             <li>10,605 benefitial mutations</li>
@@ -1239,7 +1239,7 @@ function init() {
     <br class="clr"/>
 
     <div class="snapshot">
-        <img src="firefox_9504.png"/>
+        <img src="img/firefox_9504.png"/>
         <ul style="margin-top:0.0em">
             <li>50 polygons (6-vertex)</li>
             <li>11,147 benefitial mutations</li>
@@ -1255,9 +1255,9 @@ function init() {
 
     <br class="clr"/>
     <br/>
-    
+
     <div class="snapshot wide">
-        <img src="tanaka-reina-small.jpg"/>
+        <img src="img/tanaka-reina-small.jpg"/>
         <ul style="margin-top:0.0em">
             <li>Distributed computing effort: original image size 600px X 900px, divided into 24 parts each 150px X 150px</li>
             <li>24 x 100 polygons (6-vertex)</li>
@@ -1268,13 +1268,13 @@ function init() {
             <li><small><a href="tanaka-reina-full-credits.jpg">Full resolution final image</a></small></li>
         </ul>
     </div>
-    
+
     <br class="clr"/>
     <br/>
-    
+
     <div class="snapshot wide">
-        <img src="Velazquez_Diego_Bacchus-small.jpg" style="margin-right:0.25em;"/>
-        <img src="velasquez-small.jpg"/>
+        <img src="img/Velazquez_Diego_Bacchus-small.jpg" style="margin-right:0.25em;"/>
+        <img src="img/velasquez-small.jpg"/>
          <br class="clr"/>
         <ul style="margin:0.5em 0 0 0; padding:0 0 0 1em; float:none">
             <li>Multiple 50-polygon pieces, exported to SVG, joined in Illustrator</li>
@@ -1282,7 +1282,7 @@ function init() {
             <li><small><a href="velasquez-full.jpg">Full resolution final image</a></small></li>
         </ul>
     </div>
-    
+
     <br class="clr"/>
 
     <h2 id="export_note">What is DNA import/export?</h2>
@@ -1333,10 +1333,10 @@ function init() {
     <h2>Frequently asked questions</h2>
 
     <dl>
-    
+
     <dt>[Q] I want to play with the algorithm, but my local copy doesn't want to run. What should I do?</dt>
     <dd>[A] The problem is JavaScript's <a href="http://en.wikipedia.org/wiki/Same_origin_policy">same origin security policy</a>.
-    You must access the page via local webserver using <b>http://localhost</b> instead of just <b>file://</b>. 
+    You must access the page via local webserver using <b>http://localhost</b> instead of just <b>file://</b>.
     You can use for example Apache from <a href="http://en.wikipedia.org/wiki/Xampp">XAMPP</a>.
 
     <p>Then it would still work just on local images (located at the same server, access via "http://"). If you want to access images from remote sites, you need to work around,
@@ -1354,7 +1354,7 @@ function init() {
     </dd>
 
     <dt>[Q] What are different mutations?</dt>
-    <dd> 
+    <dd>
     <ul>
         <li><b>Soft</b> mutations change exactly one parameter (R, G, B, A, X, Y) by a small delta.</li>
         <li><b>Medium</b> mutations change exactly one parameter to a completely random number.</li>
@@ -1372,7 +1372,7 @@ function init() {
 
     Or you can check <a href="http://news.ycombinator.com/item?id=392036">Hacker News</a> or
     <a href="http://www.reddit.com/r/programming/comments/7iglm/evolution_of_mona_lisa_in_javascript_canvas_use/">Reddit</a> comments for this page.
-    
+
     Also I'm on Twitter as <a href="http://twitter.com/alteredq">@alteredq</a>.
 
     <p>Feel free to improve on my implementation. The code is rather ugly, though some ugliness is there for performance reasons.
