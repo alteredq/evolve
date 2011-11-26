@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 Contributions:
 
+2011-11-26 - Benoit Girard  - offscreen canvas updates
 2008-12-26 - Fritz Webering - added Gaussian mutations
 2008-12-16 - Martin Breidt  - updated to export SVG data from DNA
 
@@ -118,6 +119,9 @@ var SUBPIXELS = 0;
 var EV_TIMEOUT = 0;
 var EV_ID = 0;
 
+var EV_REFRESH_TIMEOUT = 800;
+var EV_REFRESH_ID = 0;
+
 var COUNTER_TOTAL = 0;
 var COUNTER_BENEFIT = 0;
 
@@ -138,6 +142,7 @@ var ACTUAL_SHAPES = MAX_SHAPES; // current size
 var ACTUAL_POINTS = MAX_POINTS;
 
 var DNA_BEST = new Array(MAX_SHAPES);
+var DNA_CURR = new Array(MAX_SHAPES);
 var DNA_TEST = new Array(MAX_SHAPES);
 
 var CHANGED_SHAPE_INDEX = 0;
@@ -204,6 +209,7 @@ function clamp(val, minval, maxval) {
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function stop() {
     clearTimeout(EV_ID);
+    clearTimeout(EV_REFRESH_ID);
 
     ELAPSED_TIME += get_timestamp() - LAST_START;
 
@@ -213,6 +219,7 @@ function stop() {
 
 function start() {
     EV_ID = setInterval(evolve, EV_TIMEOUT);
+    EV_REFRESH_ID = setInterval(refreshStats, EV_REFRESH_TIMEOUT);
 
     LAST_START = get_timestamp();
     LAST_COUNTER = COUNTER_TOTAL;
@@ -237,7 +244,7 @@ function addPolygon() {
     setElement("polygons", ACTUAL_SHAPES);
 
     redrawDNA();
-    refreshStats();
+    //refreshStats();
 }
 
 function removePolygon() {
@@ -245,7 +252,7 @@ function removePolygon() {
     setElement("polygons", ACTUAL_SHAPES);
 
     redrawDNA();
-    refreshStats();
+    //refreshStats();
 }
 
 function addVertex() {
@@ -259,7 +266,7 @@ function addVertex() {
     setElement("vertices", ACTUAL_POINTS);
 
     redrawDNA();
-    refreshStats();
+    //refreshStats();
 }
 
 function removeVertex() {
@@ -267,7 +274,7 @@ function removeVertex() {
     setElement("vertices", ACTUAL_POINTS);
 
     redrawDNA();
-    refreshStats();
+    //refreshStats();
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -282,7 +289,7 @@ function setDnaRandom() {
     if(confirm("WARNING! This will reset all your progress so far. Do you really want to reset DNA?")) {
         INIT_TYPE = "random";
         resetDna();
-        refreshStats();
+        //refreshStats();
         setButtonHighlight("b_dna_random", ["b_dna_random", "b_dna_white", "b_dna_black"]);
     }
 }
@@ -304,6 +311,7 @@ function setDnaColor(r,g,b) {
 
 function resetDna() {
     init_dna(DNA_TEST);
+    init_dna(DNA_CURR);
     init_dna(DNA_BEST);
     copyDNA(DNA_BEST, DNA_TEST);
 
@@ -325,10 +333,18 @@ function refreshStats() {
 
     EL_STEP_BENEFIT.innerHTML = COUNTER_BENEFIT;
     EL_STEP_TOTAL.innerHTML = COUNTER_TOTAL;
+
+    var passed = get_timestamp() - LAST_START;
+    EL_ELAPSED_TIME.innerHTML = render_nice_time(ELAPSED_TIME+passed);
+
+    var mutsec = (COUNTER_TOTAL-LAST_COUNTER)/(get_timestamp() - LAST_START);
+    EL_MUTSEC.innerHTML = mutsec.toFixed(1);
+    drawDNA(CONTEXT_CURR, DNA_TEST);
 }
 
 function redrawDNA() {
     drawDNA(CONTEXT_TEST, DNA_TEST);
+    drawDNA(CONTEXT_CURR, DNA_CURR);
     drawDNA(CONTEXT_BEST, DNA_BEST);
 }
 
@@ -626,8 +642,9 @@ function evolve() {
     }
 
     COUNTER_TOTAL++;
-    EL_STEP_TOTAL.innerHTML = COUNTER_TOTAL;
+    if(true)return;
 
+	EL_STEP_TOTAL.innerHTML = COUNTER_TOTAL;
     if(COUNTER_TOTAL%10==0) {
         var passed = get_timestamp() - LAST_START;
         EL_ELAPSED_TIME.innerHTML = render_nice_time(ELAPSED_TIME+passed);
@@ -687,6 +704,9 @@ function init_canvas() {
     CANVAS_TEST = document.getElementById('canvas_test');
     CONTEXT_TEST = CANVAS_TEST.getContext('2d');
 
+    CANVAS_CURR = document.getElementById('canvas_curr');
+    CONTEXT_CURR = CANVAS_CURR.getContext('2d');
+
     CANVAS_BEST = document.getElementById('canvas_best');
     CONTEXT_BEST = CANVAS_BEST.getContext('2d');
 
@@ -701,6 +721,9 @@ function init_canvas() {
 
     CANVAS_TEST.setAttribute('width',IWIDTH);
     CANVAS_TEST.setAttribute('height',IHEIGHT);
+
+    CANVAS_CURR.setAttribute('width',IWIDTH);
+    CANVAS_CURR.setAttribute('height',IHEIGHT);
 
     CANVAS_BEST.setAttribute('width',IWIDTH);
     CANVAS_BEST.setAttribute('height',IHEIGHT);
@@ -826,7 +849,7 @@ function import_dna() {
         copyDNA(DNA_BEST, DNA_TEST);
 
         redrawDNA();
-        refreshStats();
+        //refreshStats();
 
         setElement("polygons", ACTUAL_SHAPES);
         setElement("vertices", ACTUAL_POINTS);
@@ -907,6 +930,11 @@ function init() {
     </div>
 
     <div class="image">
+        Current<br/>
+        <canvas id="canvas_curr"></canvas>
+    </div>
+
+    <div class="image" style="display:none;">
         Evolving<br/>
         <canvas id="canvas_test"></canvas>
     </div>
