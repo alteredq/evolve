@@ -4,7 +4,7 @@
 <!--
 The MIT License
 
-Copyright (c) 2008 AlteredQualia
+Copyright (c) 2008-2011 AlteredQualia
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,8 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+
+Contributions:
 
 2008-12-26 - Fritz Webering - added Gaussian mutations
 2008-12-16 - Martin Breidt  - updated to export SVG data from DNA
@@ -844,7 +846,7 @@ function set_image() {
                 setTimeout(init_canvas, 100);
             }
         }
-        IMAGE.src = "http://alteredqualia.com/visualization/evolve/proxy.php?i="+el.value;
+        IMAGE.src = "proxy.php?i="+el.value;
     }
 }
 
@@ -932,10 +934,10 @@ function init() {
         </form>
         <small style="color:#555;">Image should be small (~200x200 pixels), otherwise fitness computation is very slow.
         <p>Examples:
-        <a onclick="set_example_image(this); return false;" href="http://alteredqualia.com/visualization/evolve/mona_lisa_crop.jpg">Mona Lisa</a>
-        <a onclick="set_example_image(this); return false;" href="http://alteredqualia.com/visualization/evolve/darwin_crop.jpg">Darwin</a>
-        <a onclick="set_example_image(this); return false;" href="http://alteredqualia.com/visualization/evolve/velociraptor2_crop.jpg">Velociraptor</a>
-        <a onclick="set_example_image(this); return false;" href="http://alteredqualia.com/visualization/evolve/koza_crop.jpg">John Koza</a>
+        <a onclick="set_example_image(this); return false;" href="img/mona_lisa_crop.jpg">Mona Lisa</a>
+        <a onclick="set_example_image(this); return false;" href="img/darwin_crop.jpg">Darwin</a>
+        <a onclick="set_example_image(this); return false;" href="img/velociraptor2_crop.jpg">Velociraptor</a>
+        <a onclick="set_example_image(this); return false;" href="img/koza_crop.jpg">John Koza</a>
         </small>
     </div>
 
@@ -1367,6 +1369,8 @@ function init() {
     </dl>
 
     <h2>Contact</h2>
+
+	Source at <a href="https://github.com/alteredq/evolve">GitHub</a>.
 
     If you have any questions, suggestions, comments, you can send me a <a href="mailto:postfilter@gmail.com">mail</a>.
 
