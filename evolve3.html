@@ -1,0 +1,431 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Image evolution</title>
+  
+<style type="text/css">
+body { font-family:arial, sans-serif; padding:1em }
+h2 { margin-top:1.5em }
+canvas { border:solid 1px #000 }
+.image { float:left; margin-right:1em; font-size:2em }
+.clr { clear:both }
+ul { list-style-type:square }
+
+#algo { background:#eee; padding:1em; margin-top:1em }
+
+.snapshot ul, .snapshot img { float:left }
+.snapshot ul { margin:0 1em 0 0; color:#333 }
+
+#fitwrap { font-weight:bold; font-size:2em; color:#999; position:relative; top:1em }
+#fitness, #step { color:#000 }
+
+#start, #stop { width:4em; margin-top:0.5em; padding:0.5em; background:black; text-align:center; float:left; cursor:pointer}
+#start { color:lightgreen; }
+#stop { color:red; display:none }
+</style>
+  
+<script type="text/javascript">
+var CANVAS_INPUT = 0;
+var CANVAS_OUTPUT = 0;
+var CANVAS_BEST = 0;
+
+var CONTEXT_INPUT = 0;
+var CONTEXT_TEST = 0;
+var CONTEXT_BEST = 0;
+
+var IMAGE = new Image();
+var IWIDTH = 0;
+var IHEIGHT = 0;
+var SUBPIXELS = 0;
+
+var EV_TIMEOUT = 10;
+var EV_ID = 0;
+
+var COUNTER_TOTAL = 0;
+var COUNTER_BENEFIT = 0;
+
+var EL_STEP_TOTAL = 0;
+var EL_STEP_BENEFIT = 0;
+var EL_FITNESS = 0;
+
+var DNA_BEST = [];
+var DNA_TEST = [];
+
+var MAX_SHAPES = 50;
+var MAX_POINTS = 6;
+
+var CHANGED_SHAPE_INDEX = 0;
+var FITNESS_TEST = 9923400656;
+var FITNESS_BEST = 9923400656;
+
+var DATA_INPUT = 0;
+var DATA_TEST = 0;
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function hide(id) {
+    var el = document.getElementById(id);
+    if(el)
+        el.style.display = "none";
+}
+
+function show(id) {
+    var el = document.getElementById(id);
+    if(el)
+        el.style.display = "block";
+}
+
+function rand_int(maxval) {
+    return Math.round(maxval*Math.random());
+}
+
+function rand_float(maxval) {
+    return maxval*Math.random();
+}
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function stop() {
+    clearTimeout(EV_ID);
+    hide("stop");
+    show("start");
+}
+
+function start() {
+    EV_ID = setInterval(evolve, EV_TIMEOUT);
+    hide("start");
+    show("stop");
+}
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function drawShape(ctx, shape, color) {
+    ctx.fillStyle = "rgba("+color.r+","+color.g+","+color.b+","+color.a+")";
+    ctx.beginPath();
+    ctx.moveTo(shape[0].x, shape[0].y);
+    for(var i=1;i<shape.length;i++) {
+        ctx.lineTo(shape[i].x, shape[i].y);
+    }
+    ctx.closePath();
+    ctx.fill();
+}
+
+function drawDNA(ctx, dna) {
+    ctx.fillStyle = "rgb(255,255,255)";
+    ctx.fillRect(0, 0, IWIDTH, IHEIGHT);
+    for(var i in dna) {
+        drawShape(ctx, dna[i].shape, dna[i].color);
+    }
+}
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function mutateDNA(dna_out) {
+    CHANGED_SHAPE_INDEX = rand_int(dna_out.length-1);
+    
+    var roulette = rand_float(2.0);
+    
+    // mutate color
+    if(roulette<1) {
+        // red
+        if(roulette<0.25) {
+            dna_out[CHANGED_SHAPE_INDEX].color.r = rand_int(255);
+        }
+        // green
+        else if(roulette<0.5) {
+            dna_out[CHANGED_SHAPE_INDEX].color.g = rand_int(255);
+        }
+        // blue
+        else if(roulette<0.75) {
+            dna_out[CHANGED_SHAPE_INDEX].color.b = rand_int(255);
+        }
+        // alpha
+        else if(roulette<1.0) {
+            dna_out[CHANGED_SHAPE_INDEX].color.a = rand_float(1.0);
+        }
+    }
+    
+    // mutate shape
+    else {
+        var CHANGED_POINT_INDEX = rand_int(dna_out[CHANGED_SHAPE_INDEX].shape.length-1);
+        
+        // x-coordinate
+        if(roulette<1.5) {
+            dna_out[CHANGED_SHAPE_INDEX].shape[CHANGED_POINT_INDEX].x = rand_int(IWIDTH);
+        }
+        
+        // y-coordinate
+        else {
+            dna_out[CHANGED_SHAPE_INDEX].shape[CHANGED_POINT_INDEX].y = rand_int(IHEIGHT);
+        }
+    }
+}
+
+function compute_fitness(dna) {
+    var fitness = 0;
+
+    DATA_TEST = CONTEXT_TEST.getImageData(0, 0, IWIDTH, IHEIGHT).data;
+    
+    for(var i=0;i<SUBPIXELS;++i) {
+        if(i%4!=3)
+            fitness += Math.abs(DATA_INPUT[i]-DATA_TEST[i]);
+    }
+    return fitness;
+}
+
+function pass_gene_mutation(dna_from, dna_to, gene_index) {
+    dna_to[gene_index].color.r = dna_from[gene_index].color.r;
+    dna_to[gene_index].color.g = dna_from[gene_index].color.g;
+    dna_to[gene_index].color.b = dna_from[gene_index].color.b;
+    dna_to[gene_index].color.a = dna_from[gene_index].color.a;
+    
+    for(var i=0;i<dna_to[gene_index].shape.length;i++) {
+        dna_to[gene_index].shape[i].x = dna_from[gene_index].shape[i].x;
+        dna_to[gene_index].shape[i].y = dna_from[gene_index].shape[i].y;
+    }
+}
+
+function evolve() {
+    mutateDNA(DNA_TEST);
+    drawDNA(CONTEXT_TEST, DNA_TEST);
+    
+    FITNESS_TEST = compute_fitness(DNA_TEST);
+    
+    if(FITNESS_TEST<FITNESS_BEST) {
+        pass_gene_mutation(DNA_TEST, DNA_BEST, CHANGED_SHAPE_INDEX);
+        
+        FITNESS_BEST = FITNESS_TEST;
+        EL_FITNESS.innerHTML = FITNESS_BEST;
+        
+        COUNTER_BENEFIT++;
+        EL_STEP_BENEFIT.innerHTML = COUNTER_BENEFIT;
+        
+        drawDNA(CONTEXT_BEST, DNA_BEST);
+    }
+    else {
+        pass_gene_mutation(DNA_BEST, DNA_TEST, CHANGED_SHAPE_INDEX);
+    }
+    
+    COUNTER_TOTAL++;
+    EL_STEP_TOTAL.innerHTML = COUNTER_TOTAL;
+}
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function init_dna(dna) {
+    for(var i=0;i<MAX_SHAPES;i++) {
+        var points = new Array(MAX_POINTS);
+        for(var j=0;j<MAX_POINTS;j++) {
+            points[j] = {'x':rand_int(IWIDTH),'y':rand_int(IHEIGHT)};
+        }
+        var shape = {
+        'color':{'r':0,'g':0,'b':0,'a':0.0},
+        'shape':points
+        }
+        dna.push(shape);
+    }
+}
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function init_canvas() { 
+    CANVAS_INPUT = document.getElementById('canvas_input');    
+    CONTEXT_INPUT = CANVAS_INPUT.getContext('2d');
+
+    CANVAS_TEST = document.getElementById('canvas_test');
+    CONTEXT_TEST = CANVAS_TEST.getContext('2d');
+    
+    CANVAS_BEST = document.getElementById('canvas_best');
+    CONTEXT_BEST = CANVAS_BEST.getContext('2d');
+
+    IWIDTH = IMAGE.width;
+    IHEIGHT = IMAGE.height;
+    
+    SUBPIXELS = IWIDTH*IWIDTH*4;
+
+    CANVAS_INPUT.setAttribute('width',IWIDTH);  
+    CANVAS_INPUT.setAttribute('height',IHEIGHT);  
+    
+    CANVAS_TEST.setAttribute('width',IWIDTH);  
+    CANVAS_TEST.setAttribute('height',IHEIGHT);  
+        
+    CANVAS_BEST.setAttribute('width',IWIDTH);  
+    CANVAS_BEST.setAttribute('height',IHEIGHT);  
+    
+    // draw the image onto the canvas
+    CONTEXT_INPUT.drawImage(IMAGE, 0, 0, IWIDTH, IHEIGHT);    
+
+    DATA_INPUT = CONTEXT_INPUT.getImageData(0, 0, IWIDTH, IHEIGHT).data;
+    
+    EL_STEP_TOTAL = document.getElementById("step_total");
+    EL_STEP_BENEFIT = document.getElementById("step_benefit");
+    EL_FITNESS = document.getElementById("fitness");
+    
+    init_dna(DNA_TEST);
+    init_dna(DNA_BEST);
+    for(var i=0;i<DNA_TEST.length;i++)
+        pass_gene_mutation(DNA_TEST, DNA_BEST, i);
+    
+    drawDNA(CONTEXT_TEST, DNA_TEST);
+    drawDNA(CONTEXT_BEST, DNA_BEST);
+}
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function init() {
+    IMAGE.src = "mona_lisa_crop.jpg";
+    IMAGE.onload = function() {
+        init_canvas();
+    }
+}
+</script>
+
+<body onload="init()">
+    <div class="image">
+        Original<br/>
+        <canvas id="canvas_input"></canvas>
+    </div>
+    
+    <div class="image">
+        Best<br/>
+        <canvas id="canvas_best"></canvas>
+    </div>
+    
+    <div class="image">
+        Evolving<br/>
+        <canvas id="canvas_test"></canvas>
+    </div>
+    
+    <div id="fitwrap">
+        Step = <span id="step_benefit">0</span> / <span id="step_total">0</span><br/>
+        Fitness = <span id="fitness">0</span><br/>
+        
+        <div id="start" onclick="start()">Start</div>
+        <div id="stop" onclick="stop()">Stop</div>
+    </div>
+    
+    <br class="clr"/>
+    
+    <div id="text">
+    
+    <h2>What is this?</h2>
+    
+    A <a href="http://en.wikipedia.org/wiki/Simulated_Annealing">simulated annealing</a> like optimization algorithm, a reimplementation of 
+    <a href="http://rogeralsing.com/2008/12/07/genetic-programming-evolution-of-mona-lisa/">Roger Alsing's excellent idea</a>.
+    
+    <div id="algo">
+        The goal is to get an <b>image represented as a collection of overlapping polygons of various colors and transparencies</b>.
+        
+        <p>We start from random 50 polygons that are invisible. In each optimization step we randomly modify one parameter 
+        (like color components or polygon vertices) and check whether such new variant looks more like the original image.
+        If it is, we keep it, and continue to mutate this one instead.
+        
+        <p>Fitness is a sum of pixel-by-pixel differences from the original image. Lower number is better.
+    </div>
+    
+    <p>This implementation is based on Roger Alsing's description, though not on his code. There are probably some subtle differences 
+    in how the mutations are done, how the polygons are represented and how the fitness is computed as I tried to figure out how to 
+    have it running reasonably fast in JavaScript + &lt;canvas&gt; environment.
+    
+    <h2>How does it look after some time?</h2>
+    <div class="snapshot">
+        <img src="4points15min.jpg"/>
+        <ul>
+            <li>4-vertex polygons</li>
+            <li>~15 minutes</li>
+            <li>644 benefitial mutations</li>
+            <li>6,120 candidates</li>
+            <li>3,445,440 fitness</li>
+        </ul>
+    </div>
+    <div class="snapshot">
+        <img src="6points15min.jpg"/>
+        <ul>
+            <li>6-vertex polygons</li>
+            <li>~15 minutes</li>
+            <li>646 benefitial mutations</li>
+            <li>6,024 candidates</li>
+            <li>3,354,804 fitness</li>
+        </ul>
+    </div>
+    <div class="snapshot">
+        <img src="10points15min.jpg"/>
+        <ul>
+            <li>10-vertex polygons</li>
+            <li>~15 minutes</li>
+            <li>645 benefitial mutations</li>
+            <li>5,367 candidates</li>
+            <li>3,976,291 fitness</li>
+        </ul>
+    </div>
+    
+    <br class="clr"/>
+    <br class="clr"/>
+    
+    <div class="snapshot">
+        <img src="6points45min.jpg"/>
+        <ul>
+            <li>6-vertex polygons</li>
+            <li>~45 minutes</li>
+            <li>1,476 benefitial mutations</li>
+            <li>23,694 candidates</li>
+            <li>2,035,741 fitness</li>
+        </ul>
+    </div>
+    
+    <br class="clr"/>
+    
+    <h2>Does it work on all images?</h2>
+    
+    Success varies. The best seem to be color images with well defined features.
+    <br/>
+    <br/>
+    
+    <div class="snapshot">
+        <img src="darwin_tiny.jpg" style="margin-right:0.25em"/>
+        <img src="6points15min-darwin.jpg"/>
+        <ul>
+            <li>6-vertex polygons</li>
+            <li>~15 minutes</li>
+            <li>763 benefitial mutations</li>
+            <li>5,269 candidates</li>
+            <li>4,828,263 fitness</li>
+        </ul>
+    </div>
+    
+    <div class="snapshot">
+        <img src="velociraptor_tiny.jpg" style="margin-right:0.25em"/>
+        <img src="6points15min-velociraptor.jpg"/>
+        <ul>
+            <li>6-vertex polygons</li>
+            <li>~15 minutes</li>
+            <li>302 benefitial mutations</li>
+            <li>6,358 candidates</li>
+            <li>3,098,567 fitness</li>
+        </ul>
+    </div>
+    
+    <br class="clr"/>
+    
+    <h2>Requirements</h2>
+    
+    Unfortunately, due to required <a href="http://en.wikipedia.org/wiki/Canvas_(HTML_element)">&lt;canvas&gt;</a>
+    <b>getImageData</b> method support, this particular implementation works only on few browsers.
+    
+    <p>Tested and works on:
+    <ul style="color:green">
+        <li>Firefox 3.0.4 (fastest)</li>
+        <li>Opera 9.61</li>
+    </ul>
+    
+    Tested and doesn't work on:
+    <ul style="color:red">
+        <li>Safari 3.1.2</li>
+        <li>Chrome 0.4.154.29</li>
+        <li>Explorer 7</li>
+    </ul>
+    
+    It may work on development versions of Safari and be faster on development versions of Firefox and Opera.
+    </div>
+    
+    <h2>Contact</h2>
+    
+    If you have any questions, suggestions, etc., you can send me a <a href="mailto:postfilter@gmail.com">mail</a>.
+    
+    <p>Feel free to improve on my implementation. The code is rather ugly, though some ugliness is there for performance reasons.
+    
+ </body>
+</html>
